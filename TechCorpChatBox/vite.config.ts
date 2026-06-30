@@ -8,4 +8,13 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    proxy: {
+      '/api/ollama': {
+        target: 'http://localhost:11434',
+        rewrite: (path) => path.replace(/^\/api\/ollama/, ''),
+        changeOrigin: true,
+      },
+    },
+  },
 })
