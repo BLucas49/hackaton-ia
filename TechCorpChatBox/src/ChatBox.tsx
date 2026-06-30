@@ -15,15 +15,25 @@ type Conversation = {
   createdAt: number;
 };
 
-const MODEL = "techcorp-chatbox";
+const MODEL = "techcorp-chatbox-financial";
 const STORAGE_KEY = "techcorp-conversations";
 
 type Lang = "fr" | "en";
 
-const LANG_PRIMER: Record<Lang, { role: "user" | "assistant"; content: string }[] | null> = {
+const LANG_PRIMER: Record<
+  Lang,
+  { role: "user" | "assistant"; content: string }[] | null
+> = {
   fr: [
-    { role: "user", content: "Pour toute cette conversation, réponds uniquement en français." },
-    { role: "assistant", content: "Bien sûr, je répondrai en français pour toute cette conversation." },
+    {
+      role: "user",
+      content: "Pour toute cette conversation, réponds uniquement en français.",
+    },
+    {
+      role: "assistant",
+      content:
+        "Bien sûr, je répondrai en français pour toute cette conversation.",
+    },
   ],
   en: null,
 };
@@ -60,20 +70,25 @@ const ChatBox = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [modelStatus, setModelStatus] = useState<"checking" | "available" | "unavailable">("checking");
+  const [modelStatus, setModelStatus] = useState<
+    "checking" | "available" | "unavailable"
+  >("checking");
   const [lang, setLang] = useState<Lang>("fr");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
+  const active =
+    conversations.find((c) => c.id === activeId) ?? conversations[0];
 
   useEffect(() => {
     fetch("/api/ollama/api/tags")
       .then((res) => res.json())
       .then((data) => {
         const models: { name: string }[] = data.models ?? [];
-        const found = models.some((m) => m.name === MODEL || m.name.startsWith(MODEL + ":"));
+        const found = models.some(
+          (m) => m.name === MODEL || m.name.startsWith(MODEL + ":"),
+        );
         setModelStatus(found ? "available" : "unavailable");
       })
       .catch(() => setModelStatus("unavailable"));
@@ -87,11 +102,18 @@ const ChatBox = () => {
     saveConversations(conversations);
   }, [conversations]);
 
-  const updateConversation = (id: string, updater: (c: Conversation) => Conversation) => {
+  const updateConversation = (
+    id: string,
+    updater: (c: Conversation) => Conversation,
+  ) => {
     setConversations((prev) => prev.map((c) => (c.id === id ? updater(c) : c)));
   };
 
-  const appendToAssistant = (chunk: string, convId: string, history: Message[]) => {
+  const appendToAssistant = (
+    chunk: string,
+    convId: string,
+    history: Message[],
+  ) => {
     setConversations((prev) =>
       prev.map((c) => {
         if (c.id !== convId) return c;
@@ -105,7 +127,10 @@ const ChatBox = () => {
             ],
           };
         }
-        return { ...c, messages: [...history, { role: "assistant", content: chunk }] };
+        return {
+          ...c,
+          messages: [...history, { role: "assistant", content: chunk }],
+        };
       }),
     );
   };
@@ -122,7 +147,8 @@ const ChatBox = () => {
       for (const line of decoder.decode(value).split("\n").filter(Boolean)) {
         try {
           const data = JSON.parse(line);
-          if (data.message?.content) appendToAssistant(data.message.content, convId, history);
+          if (data.message?.content)
+            appendToAssistant(data.message.content, convId, history);
         } catch {
           // ignore malformed JSON lines
         }
@@ -139,7 +165,8 @@ const ChatBox = () => {
     const convId = active.id;
 
     const isFirstMessage = active.messages.length === 0;
-    const truncated = content.length > 40 ? content.slice(0, 40) + "…" : content;
+    const truncated =
+      content.length > 40 ? content.slice(0, 40) + "…" : content;
     const title = isFirstMessage ? truncated : active.title;
 
     updateConversation(convId, (c) => ({ ...c, messages: history, title }));
@@ -232,10 +259,16 @@ const ChatBox = () => {
 
   return (
     <div className="app-layout">
-      <aside className={`sidebar ${sidebarOpen ? "sidebar--open" : "sidebar--closed"}`}>
+      <aside
+        className={`sidebar ${sidebarOpen ? "sidebar--open" : "sidebar--closed"}`}
+      >
         <div className="sidebar-header">
           {sidebarOpen && <span className="sidebar-title">Conversations</span>}
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen((v) => !v)} title="Réduire">
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen((v) => !v)}
+            title="Réduire"
+          >
             {sidebarOpen ? "‹" : "›"}
           </button>
         </div>
@@ -254,31 +287,33 @@ const ChatBox = () => {
                 const isActive = c.id === activeId;
                 const isBlocked = loading && !isActive;
                 return (
-                <li
-                  key={c.id}
-                  className={`conv-item ${isActive ? "conv-item--active" : ""} ${isBlocked ? "conv-item--blocked" : ""}`}
-                  title={isBlocked ? "Une réponse est en cours…" : undefined}
-                >
-                  <button
-                    className="conv-select"
-                    onClick={() => setActiveId(c.id)}
-                    disabled={isBlocked}
+                  <li
+                    key={c.id}
+                    className={`conv-item ${isActive ? "conv-item--active" : ""} ${isBlocked ? "conv-item--blocked" : ""}`}
+                    title={isBlocked ? "Une réponse est en cours…" : undefined}
                   >
-                    {isActive && loading && <span className="conv-generating" />}
-                    {c.title}
-                  </button>
-                  {conversations.length > 1 && (
                     <button
-                      className="conv-delete"
-                      onClick={() => deleteConversation(c.id)}
+                      className="conv-select"
+                      onClick={() => setActiveId(c.id)}
                       disabled={isBlocked}
-                      title={isBlocked ? undefined : "Supprimer"}
                     >
-                      ×
+                      {isActive && loading && (
+                        <span className="conv-generating" />
+                      )}
+                      {c.title}
                     </button>
-                  )}
-                </li>
-              );
+                    {conversations.length > 1 && (
+                      <button
+                        className="conv-delete"
+                        onClick={() => deleteConversation(c.id)}
+                        disabled={isBlocked}
+                        title={isBlocked ? undefined : "Supprimer"}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </li>
+                );
               })}
             </ul>
           </>
@@ -307,12 +342,17 @@ const ChatBox = () => {
             <div className="empty-state">
               <span className="empty-icon">◈</span>
               <p className="empty-title">TechCorp Financial Assistant</p>
-              <p className="empty-sub">Posez vos questions sur la finance, les marchés ou les données TechCorp.</p>
+              <p className="empty-sub">
+                Posez vos questions sur la finance, les marchés ou les données
+                TechCorp.
+              </p>
             </div>
           )}
           {active?.messages.map((msg, i) => (
             <div key={i} className={`message message--${msg.role}`}>
-              {msg.role === "assistant" && <span className="msg-author">Assistant</span>}
+              {msg.role === "assistant" && (
+                <span className="msg-author">Assistant</span>
+              )}
               <div className="message-bubble">
                 {msg.role === "assistant" ? (
                   <div className="md">
