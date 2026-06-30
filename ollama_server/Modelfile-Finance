@@ -1,0 +1,19 @@
+FROM hf.co/meghana-choudhary/model_8bitgguf_phi3.5_financial:Q8_0
+
+# 1. Le Template strict pour la famille Phi-3
+TEMPLATE """{{ if .System }}<|system|>
+{{ .System }}<|end|>
+{{ end }}{{ if .Prompt }}<|user|>
+{{ .Prompt }}<|end|>
+{{ end }}<|assistant|>
+"""
+
+# 2. Paramètres d'inférence
+PARAMETER temperature 0.1
+PARAMETER num_ctx 4096
+PARAMETER num_predict 512
+
+# 3. Comportement et Rôle
+SYSTEM """Tu es l'assistant IA financier expert de TechCorp Industries. 
+Ton rôle est de fournir des analyses financières, des résumés de données et des conseils techniques.
+Tes réponses doivent être strictement factuelles, concises et professionnelles. Adapte-toi et réponds dans la langue demandée par l'interface."""
