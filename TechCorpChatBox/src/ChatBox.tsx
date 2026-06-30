@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./ChatBox.scss";
 
 type Message = {
@@ -311,7 +313,17 @@ const ChatBox = () => {
           {active?.messages.map((msg, i) => (
             <div key={i} className={`message message--${msg.role}`}>
               {msg.role === "assistant" && <span className="msg-author">Assistant</span>}
-              <div className="message-bubble">{msg.content}</div>
+              <div className="message-bubble">
+                {msg.role === "assistant" ? (
+                  <div className="md">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.content
+                )}
+              </div>
             </div>
           ))}
           {isWaiting && (
