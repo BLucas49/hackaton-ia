@@ -16,6 +16,16 @@ type Conversation = {
 const MODEL = "techcorp-chatbox";
 const STORAGE_KEY = "techcorp-conversations";
 
+type Lang = "fr" | "en";
+
+const LANG_PRIMER: Record<Lang, { role: "user" | "assistant"; content: string }[] | null> = {
+  fr: [
+    { role: "user", content: "Pour toute cette conversation, réponds uniquement en français." },
+    { role: "assistant", content: "Bien sûr, je répondrai en français pour toute cette conversation." },
+  ],
+  en: null,
+};
+
 const generateId = () => Math.random().toString(36).slice(2, 10);
 
 const loadConversations = (): Conversation[] => {
@@ -48,11 +58,24 @@ const ChatBox = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [modelStatus, setModelStatus] = useState<"checking" | "available" | "unavailable">("checking");
+  const [lang, setLang] = useState<Lang>("fr");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
+
+  useEffect(() => {
+    fetch("/api/ollama/api/tags")
+      .then((res) => res.json())
+      .then((data) => {
+        const models: { name: string }[] = data.models ?? [];
+        const found = models.some((m) => m.name === MODEL || m.name.startsWith(MODEL + ":"));
+        setModelStatus(found ? "available" : "unavailable");
+      })
+      .catch(() => setModelStatus("unavailable"));
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,7 +152,11 @@ const ChatBox = () => {
       const response = await fetch("/api/ollama/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: MODEL, messages: history, stream: true }),
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [...(LANG_PRIMER[lang] ?? []), ...history],
+          stream: true,
+        }),
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -212,27 +239,45 @@ const ChatBox = () => {
         </div>
         {sidebarOpen && (
           <>
-            <button className="new-conv-btn" onClick={createConversation}>
+            <button
+              className="new-conv-btn"
+              onClick={createConversation}
+              disabled={loading}
+              title={loading ? "Une réponse est en cours…" : undefined}
+            >
               + Nouvelle conversation
             </button>
             <ul className="conv-list">
-              {conversations.map((c) => (
-                <li key={c.id} className={`conv-item ${c.id === activeId ? "conv-item--active" : ""}`}>
+              {conversations.map((c) => {
+                const isActive = c.id === activeId;
+                const isBlocked = loading && !isActive;
+                return (
+                <li
+                  key={c.id}
+                  className={`conv-item ${isActive ? "conv-item--active" : ""} ${isBlocked ? "conv-item--blocked" : ""}`}
+                  title={isBlocked ? "Une réponse est en cours…" : undefined}
+                >
                   <button
                     className="conv-select"
                     onClick={() => setActiveId(c.id)}
+                    disabled={isBlocked}
                   >
+                    {isActive && loading && <span className="conv-generating" />}
                     {c.title}
                   </button>
-                  <button
-                    className="conv-delete"
-                    onClick={() => deleteConversation(c.id)}
-                    title="Supprimer"
-                  >
-                    ×
-                  </button>
+                  {conversations.length > 1 && (
+                    <button
+                      className="conv-delete"
+                      onClick={() => deleteConversation(c.id)}
+                      disabled={isBlocked}
+                      title={isBlocked ? undefined : "Supprimer"}
+                    >
+                      ×
+                    </button>
+                  )}
                 </li>
-              ))}
+              );
+              })}
             </ul>
           </>
         )}
@@ -241,15 +286,31 @@ const ChatBox = () => {
       <main className="chatbox">
         <header className="chatbox-header">
           <h1>TechCorp Assistant</h1>
-          <span className="model-badge">{MODEL}</span>
+          <button
+            className="lang-toggle"
+            onClick={() => setLang((l) => (l === "fr" ? "en" : "fr"))}
+            title="Changer la langue"
+          >
+            {lang === "fr" ? "🇫🇷 FR" : "🇬🇧 EN"}
+          </button>
+          <span className={`model-badge model-badge--${modelStatus}`}>
+            {modelStatus === "checking" && "Vérification…"}
+            {modelStatus === "available" && "Disponible"}
+            {modelStatus === "unavailable" && "Indisponible"}
+          </span>
         </header>
 
         <div className="chatbox-messages">
           {active?.messages.length === 0 && (
-            <p className="empty-state">Commencez une conversation...</p>
+            <div className="empty-state">
+              <span className="empty-icon">◈</span>
+              <p className="empty-title">TechCorp Financial Assistant</p>
+              <p className="empty-sub">Posez vos questions sur la finance, les marchés ou les données TechCorp.</p>
+            </div>
           )}
           {active?.messages.map((msg, i) => (
             <div key={i} className={`message message--${msg.role}`}>
+              {msg.role === "assistant" && <span className="msg-author">Assistant</span>}
               <div className="message-bubble">{msg.content}</div>
             </div>
           ))}
