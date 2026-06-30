@@ -8,11 +8,14 @@ Ollama doit être configuré avant de lancer le projet. Voir le [guide de config
 
 ## Lancement
 
-### 1. Lancer le modèle Ollama
+### 1. Lancer les modèles Ollama
 
 ```bash
-ollama create techcorp-chatbox -f ./ollama_server/Modelfile
-ollama run techcorp-chatbox
+ollama create techcorp-chatbox-financial -f ./ollama_server/Modelfile-Finance
+ollama run techcorp-chatbox-financial
+
+ollama create techcorp-chatbox-medical -f ./ollama_server/Modelfile-Medical
+ollama run techcorp-chatbox-medical
 ```
 
 ### 2. Démarrer l'interface web
