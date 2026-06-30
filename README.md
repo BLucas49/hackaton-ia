@@ -18,5 +18,6 @@ ollama run techcorp-chatbox
 ### 2. Démarrer l'interface web
 
 ```bash
+cd TechCorpChatBox/
 npm run dev
 ```
