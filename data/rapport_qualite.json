@@ -1,0 +1,47 @@
+{
+  "avant": [
+    {
+      "fichier": "finance_dataset_final.json",
+      "entrees": 2997,
+      "instruction_vide": 0,
+      "output_vide": 0,
+      "type_invalide": 0,
+      "doublons_exacts": 482,
+      "entrees_empoisonnees": 497,
+      "entrees_avec_secrets": 288,
+      "entrees_hors_finance": 613,
+      "entrees_non_ascii": 640,
+      "output_len_min": 24,
+      "output_len_max": 4041,
+      "output_len_moy": 1337,
+      "outputs_trop_courts": 0
+    }
+  ],
+  "nettoyage": [
+    {
+      "poison_supprime": 497,
+      "fichier": "finance_dataset_final.json",
+      "entrees_avant": 2997,
+      "entrees_apres": 2500,
+      "sortie": "clean\\finance_dataset_final_clean.json"
+    }
+  ],
+  "apres": [
+    {
+      "fichier": "finance_dataset_final.json",
+      "entrees": 2500,
+      "instruction_vide": 0,
+      "output_vide": 0,
+      "type_invalide": 0,
+      "doublons_exacts": 0,
+      "entrees_empoisonnees": 0,
+      "entrees_avec_secrets": 0,
+      "entrees_hors_finance": 116,
+      "entrees_non_ascii": 640,
+      "output_len_min": 135,
+      "output_len_max": 4041,
+      "output_len_moy": 1590,
+      "outputs_trop_courts": 0
+    }
+  ]
+}
